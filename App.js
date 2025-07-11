@@ -1,42 +1,75 @@
+// File: App.js
 import React, { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import HomeScreen from './HomeScreen';
 import PresetsScreen from './presets/presetsScreen';
+import EditScreen from './presets/EditScreen';
+import PreviewScreen from './presets/PreviewScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [selectedPreset, setSelectedPreset] = useState(null);
-  const [currentSlotIndex, setCurrentSlotIndex] = useState(null);
   const [userImages, setUserImages] = useState([]);
+  const [currentSlotIndex, setCurrentSlotIndex] = useState(null);
   const [countdown, setCountdown] = useState(3);
   const [isShooting, setIsShooting] = useState(false);
 
   const pickMultipleImages = async () => {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsMultipleSelection: true,
-    quality: 1,
-  });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 1,
+    });
 
-  if (!result.canceled) {
-    const updated = [...userImages];
-    const selected = result.assets;
+    if (!result.canceled) {
+      const updated = [...userImages];
+      const selected = result.assets;
 
-    let selectedIndex = 0;
-    for (let i = 0; i < updated.length; i++) {
-      if (!updated[i] && selectedIndex < selected.length) {
-        updated[i] = selected[selectedIndex].uri;
-        selectedIndex++;
+      let selectedIndex = 0;
+      for (let i = 0; i < updated.length; i++) {
+        if (!updated[i] && selectedIndex < selected.length) {
+          updated[i] = selected[selectedIndex].uri;
+          selectedIndex++;
+        }
       }
+
+      setUserImages(updated);
     }
+  };
 
-    setUserImages(updated);
-  }
-};
+  const takePhoto = async (index) => {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
 
+    if (!result.canceled) {
+      const newUri = result.assets[0].uri;
+      setUserImages((prev) => {
+        const updated = [...prev];
+        updated[index] = newUri;
+        return updated;
+      });
+    }
+  };
+
+  const handleSelectImage = async (index) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      const updated = [...userImages];
+      updated[index] = uri;
+      setUserImages(updated);
+    }
+  };
 
   const autoCaptureForSlots = async (index) => {
     if (index >= selectedPreset.slots.length) {
@@ -65,41 +98,11 @@ export default function App() {
     }, 1000);
   };
 
-  const takePhoto = async (index) => {
-  const result = await ImagePicker.launchCameraAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    quality: 1,
-  });
-
-  if (!result.canceled) {
-    const newUri = result.assets[0].uri;
-
-    setUserImages((prev) => {
-      const updated = [...prev];
-      updated[index] = newUri;
-      return updated;
-    });
-  }
-};
-const handleSelectImage = async (index) => {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    quality: 1,
-  });
-
-  if (!result.canceled) {
-    const uri = result.assets[0].uri;
-    const updated = [...userImages];
-    updated[index] = uri;
-    setUserImages(updated);
-  }
-};
-
-
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Home" component={HomeScreen}  options={{ headerShown: false }}/>
+
         <Stack.Screen name="Preset" options={{ title: 'Khung mẫu' }}>
           {(props) => (
             <PresetsScreen
@@ -118,6 +121,17 @@ const handleSelectImage = async (index) => {
             />
           )}
         </Stack.Screen>
+
+        <Stack.Screen
+          name="EditScreen"
+          component={EditScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PreviewScreen"
+          component={PreviewScreen}
+          options={{ title: 'Xem trước ảnh' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,5 +1,4 @@
-import React from 'react';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,13 +9,32 @@ import {
   Dimensions,
   ScrollView,
   Alert,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
+import CameraRoll from '@react-native-community/cameraroll';
+import ViewShot from 'react-native-view-shot';
 import { presets } from './presets';
+import FramePreview from './FramePreview';
 
 const screenWidth = Dimensions.get('window').width;
 const itemWidth = (screenWidth - 48) / 2;
 
+// Hàm tính toán chiều cao tự nhiên cho từng preset
+const getPresetHeight = (preset) => {
+  // Lấy aspect ratio từ preset hoặc ước tính dựa trên số slots
+  const baseHeight = 180;
+  const slotCount = preset.slots.length;
+  
+  // Tính toán chiều cao dựa trên layout của preset
+  if (slotCount <= 2) return baseHeight;
+  if (slotCount <= 4) return baseHeight + 40;
+  if (slotCount <= 6) return baseHeight + 80;
+  return baseHeight + 120;
+};
+
 export default function PresetsScreen({
+  navigation,
   selectedPreset,
   setSelectedPreset,
   userImages,
@@ -28,6 +46,33 @@ export default function PresetsScreen({
 }) {
   const filledCount = userImages.filter(Boolean).length;
   const totalSlots = selectedPreset?.slots.length || 0;
+  const [editedResult, setEditedResult] = useState(null);
+  const framePreviewRef = useRef();
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const routeParams = navigation.getState()?.routes.find(
+        (r) => r.name === 'PresetsScreen'
+      )?.params;
+
+      if (routeParams?.editedImages) {
+        setEditedResult(routeParams.editedImages);
+        if (routeParams.selectedPreset) {
+          setSelectedPreset(routeParams.selectedPreset);
+        }
+        if (routeParams.userImages) {
+          setUserImages(routeParams.userImages);
+        }
+        navigation.setParams({
+          editedImages: undefined,
+          selectedPreset: undefined,
+          userImages: undefined,
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const handleBackToPresets = () => {
     Alert.alert(
@@ -41,6 +86,7 @@ export default function PresetsScreen({
           onPress: () => {
             setSelectedPreset(null);
             setUserImages([]);
+            setEditedResult(null);
           },
         },
       ]
@@ -48,22 +94,19 @@ export default function PresetsScreen({
   };
 
   const handleRemoveImage = (index) => {
-    Alert.alert(
-      'Xóa ảnh',
-      'Bạn có chắc chắn muốn xóa ảnh này?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: () => {
-            const updated = [...userImages];
-            updated[index] = null;
-            setUserImages(updated);
-          },
+    Alert.alert('Xóa ảnh', 'Bạn có chắc chắn muốn xóa ảnh này?', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          const updated = [...userImages];
+          updated[index] = null;
+          setUserImages(updated);
+          setEditedResult(null);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleQuickFill = () => {
@@ -72,16 +115,55 @@ export default function PresetsScreen({
       `Bạn cần thêm ${totalSlots - filledCount} ảnh nữa`,
       [
         { text: 'Hủy', style: 'cancel' },
-        {
-          text: '📷 Chụp tất cả',
-          onPress: () => autoCaptureForSlots(0),
-        },
-        {
-          text: '📁 Chọn từ thư viện',
-          onPress: pickMultipleImages,
-        },
+        { text: '📷 Chụp tất cả', onPress: () => autoCaptureForSlots(0) },
+        { text: '📁 Chọn từ thư viện', onPress: pickMultipleImages },
       ]
     );
+  };
+
+  const requestWriteExternalStoragePermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Quyền truy cập bộ nhớ',
+            message: 'Ứng dụng cần quyền truy cập bộ nhớ để lưu ảnh.',
+            buttonNeutral: 'Hỏi lại sau',
+            buttonNegative: 'Hủy',
+            buttonPositive: 'Đồng ý',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleSaveEditedImage = async () => {
+    const hasPermission = await requestWriteExternalStoragePermission();
+    if (!hasPermission) {
+      Alert.alert('Không có quyền', 'Không thể lưu ảnh do thiếu quyền truy cập bộ nhớ.');
+      return;
+    }
+
+    if (framePreviewRef.current) {
+      try {
+        const uri = await framePreviewRef.current.capture();
+        CameraRoll.save(uri, { type: 'photo' })
+          .then(() => Alert.alert('Thành công', 'Ảnh đã được lưu vào thư viện!'))
+          .catch((error) => {
+            console.error('Failed to save image:', error);
+            Alert.alert('Lỗi', 'Không thể lưu ảnh. Vui lòng thử lại.');
+          });
+      } catch (error) {
+        console.error('Snapshot failed:', error);
+        Alert.alert('Lỗi', 'Không thể tạo ảnh. Vui lòng thử lại.');
+      }
+    }
   };
 
   if (!selectedPreset) {
@@ -89,32 +171,40 @@ export default function PresetsScreen({
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Chọn khung ảnh</Text>
-          <Text style={styles.headerSubtitle}>
-            Hãy chọn một khung ảnh mà bạn yêu thích
-          </Text>
+          <Text style={styles.headerSubtitle}>Hãy chọn một khung ảnh mà bạn yêu thích</Text>
         </View>
-        
+
         <FlatList
           data={presets}
           numColumns={2}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.presetCard}
-              onPress={() => {
-                setSelectedPreset(item);
-                setUserImages(Array(item.slots.length).fill(null));
-              }}
-            >
-              <View style={styles.imageContainer}>
-                <Image source={item.image} style={styles.presetImage} resizeMode="cover" />
-                <View style={styles.overlay}>
-                  <Text style={styles.slotCount}>{item.slots.length} ảnh</Text>
+          renderItem={({ item }) => {
+            const presetHeight = getPresetHeight(item);
+            return (
+              <TouchableOpacity
+                style={[styles.presetCard, { height: presetHeight + 60 }]} // +60 cho padding và text
+                onPress={() => {
+                  setSelectedPreset(item);
+                  setUserImages(Array(item.slots.length).fill(null));
+                  setEditedResult(null);
+                }}
+              >
+                <View style={[styles.imageContainer, { height: presetHeight }]}>
+                  <Image 
+                    source={item.image} 
+                    style={[styles.presetImage, { height: presetHeight - 24 }]} 
+                    resizeMode="contain" 
+                  />
+                  <View style={styles.overlay}>
+                    <Text style={styles.slotCount}>{item.slots.length} ảnh</Text>
+                  </View>
                 </View>
-              </View>
-              <Text style={styles.presetLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          )}
+                <View style={styles.cardContent}>
+                  <Text style={styles.presetLabel}>{item.label}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
           contentContainerStyle={styles.presetsList}
           showsVerticalScrollIndicator={false}
         />
@@ -124,7 +214,7 @@ export default function PresetsScreen({
 
   return (
     <View style={styles.container}>
-      {/* Header với nút quay lại */}
+      {/* Header */}
       <View style={styles.selectedHeader}>
         <TouchableOpacity onPress={handleBackToPresets} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Chọn khung khác</Text>
@@ -132,44 +222,57 @@ export default function PresetsScreen({
         <Text style={styles.selectedTitle}>{selectedPreset.label}</Text>
       </View>
 
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Progress indicator */}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Progress bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${(filledCount / totalSlots) * 100}%` }
-              ]} 
-            />
+            <View style={[styles.progressFill, { width: `${(filledCount / totalSlots) * 100}%` }]} />
           </View>
           <Text style={styles.progressText}>
             {filledCount}/{totalSlots} ảnh đã chọn
           </Text>
         </View>
 
-        {/* Preview khung */}
-        <View style={styles.previewContainer}>
-          <Image
-            source={selectedPreset.image}
-            style={styles.framePreview}
-            resizeMode="contain"
-          />
-        </View>
+        {/* Preview block */}
+        {(editedResult || filledCount < totalSlots) && (
+          <View style={styles.previewContainer}>
+            {editedResult ? (
+              <>
+                <Text style={styles.previewInfoText}>📸 Ảnh sau khi chỉnh sửa:</Text>
+                <ViewShot ref={framePreviewRef} options={{ format: 'png', quality: 1 }}>
+                  <FramePreview
+                    preset={selectedPreset}
+                    userImages={editedResult}
+                    containerWidth={screenWidth * 0.85}
+                  />
+                </ViewShot>
+                <TouchableOpacity
+                  style={[styles.primaryButton, { marginTop: 20 }]}
+                  onPress={handleSaveEditedImage}
+                >
+                  <Text style={styles.primaryButtonText}>⬇️ Lưu ảnh đã sửa</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.previewInfoText}>🎨 Khung ảnh đã chọn</Text>
+                <View style={styles.presetOnlyFrame}>
+                  <Image
+                    source={selectedPreset.image}
+                    style={styles.presetOnlyImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              </>
+            )}
+          </View>
+        )}
 
-        {/* Quick actions khi chưa đủ ảnh */}
+        {/* Quick Add */}
         {filledCount < totalSlots && (
           <View style={styles.quickActionsContainer}>
-            <Text style={styles.quickActionsTitle}>
-              Cần thêm {totalSlots - filledCount} ảnh
-            </Text>
-            <TouchableOpacity 
-              style={styles.primaryButton}
-              onPress={handleQuickFill}
-            >
+            <Text style={styles.quickActionsTitle}>Cần thêm {totalSlots - filledCount} ảnh</Text>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleQuickFill}>
               <Text style={styles.primaryButtonText}>
                 ⚡ Thêm nhanh {totalSlots - filledCount} ảnh
               </Text>
@@ -177,20 +280,34 @@ export default function PresetsScreen({
           </View>
         )}
 
-        {/* Danh sách slots */}
+        {/* If filled & chưa chỉnh sửa */}
+        {filledCount === totalSlots && !editedResult && (
+          <View style={styles.presetOnlyContainer}>
+            <Text style={styles.presetOnlyTitle}>🎨 Khung ảnh đã chọn</Text>
+            <View style={styles.presetOnlyFrame}>
+              <Image
+                source={selectedPreset.image}
+                style={styles.presetOnlyImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Danh sách từng ảnh */}
         <View style={styles.slotsContainer}>
           <Text style={styles.slotsTitle}>Quản lý từng ảnh</Text>
           {userImages.map((uri, index) => (
             <View key={index} style={styles.imageSlot}>
               <View style={styles.slotHeader}>
                 <Text style={styles.slotNumber}>Ảnh {index + 1}</Text>
-                <View style={[
-                  styles.statusBadge,
-                  uri ? styles.statusFilled : styles.statusEmpty
-                ]}>
-                  <Text style={styles.statusText}>
-                    {uri ? '✓ Đã có' : '○ Trống'}
-                  </Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    uri ? styles.statusFilled : styles.statusEmpty,
+                  ]}
+                >
+                  <Text style={styles.statusText}>{uri ? '✓ Đã có' : '○ Trống'}</Text>
                 </View>
               </View>
 
@@ -198,19 +315,16 @@ export default function PresetsScreen({
                 <View style={styles.filledSlot}>
                   <Image source={{ uri }} style={styles.slotImage} />
                   <View style={styles.slotActions}>
-                    <TouchableOpacity 
-                      style={styles.actionButton}
-                      onPress={() => takePhoto(index)}
-                    >
+                    <TouchableOpacity style={styles.actionButton} onPress={() => takePhoto(index)}>
                       <Text style={styles.actionButtonText}>📷 Chụp lại</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.actionButton}
                       onPress={() => handleSelectImage(index)}
                     >
                       <Text style={styles.actionButtonText}>📁 Chọn lại</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={[styles.actionButton, styles.deleteButton]}
                       onPress={() => handleRemoveImage(index)}
                     >
@@ -222,13 +336,13 @@ export default function PresetsScreen({
                 <View style={styles.emptySlot}>
                   <Text style={styles.emptySlotText}>Chưa có ảnh</Text>
                   <View style={styles.emptySlotActions}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={[styles.actionButton, styles.primaryAction]}
                       onPress={() => takePhoto(index)}
                     >
                       <Text style={styles.primaryActionText}>📷 Chụp ảnh</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.actionButton}
                       onPress={() => handleSelectImage(index)}
                     >
@@ -241,12 +355,21 @@ export default function PresetsScreen({
           ))}
         </View>
 
-        {/* Completion status */}
-        {filledCount === totalSlots && (
+        {/* Nút chuyển sang EditScreen */}
+        {filledCount === totalSlots && !editedResult && (
           <View style={styles.completionContainer}>
-            <Text style={styles.completionText}>
-              🎉 Hoàn thành! Tất cả ảnh đã được chọn
-            </Text>
+            <Text style={styles.completionText}>🎉 Hoàn thành! Tất cả ảnh đã được chọn</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() =>
+                navigation.navigate('EditScreen', {
+                  selectedPreset,
+                  userImages: userImages.map((uri) => ({ uri })),
+                })
+              }
+            >
+              <Text style={styles.editButtonText}>✏️ Chỉnh sửa thiết kế</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -257,7 +380,7 @@ export default function PresetsScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f5f6fa', // Nền xám nhẹ thay vì trắng
   },
   
   // Header styles
@@ -280,7 +403,7 @@ const styles = StyleSheet.create({
     color: '#6c757d',
   },
 
-  // Presets list styles
+  // Pinterest-style presets list
   presetsList: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -289,47 +412,58 @@ const styles = StyleSheet.create({
   presetCard: {
     width: itemWidth,
     margin: 8,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)', // Trắng đục hơn
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
+    // Không có height cố định, để tự động điều chỉnh
   },
   imageContainer: {
     position: 'relative',
+    backgroundColor: '#fafbfc', // Nền nhẹ cho container ảnh
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   presetImage: {
-    width: '100%',
-    height: 180,
+    width: itemWidth - 40, // Tăng padding
+    borderRadius: 12,
+    // Height sẽ được set động trong render
   },
   overlay: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   slotCount: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
-  presetLabel: {
+  cardContent: {
     padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+  },
+  presetLabel: {
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 14,
-    color: '#495057',
+    color: '#2c3e50',
+    lineHeight: 18,
   },
 
   // Selected preset styles
   selectedHeader: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -381,11 +515,45 @@ const styles = StyleSheet.create({
   previewContainer: {
     alignItems: 'center',
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
-  framePreview: {
-    width: screenWidth * 0.7,
-    height: screenWidth * 0.9,
-    borderRadius: 12,
+  previewInfoText: {
+    fontSize: 16,
+    color: '#495057',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+
+  // Preset only display styles
+  presetOnlyContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  presetOnlyTitle: {
+    fontSize: 16,
+    color: '#495057',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  presetOnlyFrame: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presetOnlyImage: {
+    width: screenWidth * 0.75,
+    height: (screenWidth * 0.75) * 1.3,
+    borderRadius: 16,
   },
 
   // Quick actions styles
@@ -393,7 +561,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 24,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     alignItems: 'center',
     elevation: 2,
@@ -431,7 +599,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   imageSlot: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -546,5 +714,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#155724',
+    marginBottom: 12,
+  },
+  editButton: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
