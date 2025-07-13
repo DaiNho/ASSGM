@@ -10,7 +10,7 @@ import EditScreen from './presets/EditScreen';
 import PreviewScreen from './presets/PreviewScreen';
 import AIScreen from './presets/AIEnhanceScreen';
 const Stack = createNativeStackNavigator();
-
+//....
 export default function App() {
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [userImages, setUserImages] = useState([]);
