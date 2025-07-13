@@ -8,7 +8,7 @@ import HomeScreen from './HomeScreen';
 import PresetsScreen from './presets/presetsScreen';
 import EditScreen from './presets/EditScreen';
 import PreviewScreen from './presets/PreviewScreen';
-
+import AIScreen from './presets/AIEnhanceScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -102,7 +102,11 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="Home" component={HomeScreen}  options={{ headerShown: false }}/>
-
+  <Stack.Screen 
+          name="AIScreen" 
+          component={AIScreen} 
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="Preset" options={{ title: 'Khung mẫu' }}>
           {(props) => (
             <PresetsScreen

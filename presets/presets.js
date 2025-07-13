@@ -117,8 +117,6 @@ export const presets = [
     originalHeight: 600,
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {

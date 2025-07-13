@@ -1,5 +1,3 @@
-// File: PreviewScreen.js
-
 import React from 'react';
 import {
   View,

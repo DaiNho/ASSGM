@@ -1,5 +1,3 @@
-// File: EditScreen.js
-
 import React, {
   useState,
   useMemo,
@@ -152,14 +150,12 @@ export default function EditScreen({ navigation, route }) {
   );
   const viewShotRef = useRef();
 
-  // Điều chỉnh kích thước container để fit màn hình tốt hơn
   const containerWidth = screenWidth * 0.85;
   const originalWidth = selectedPreset?.originalWidth || 350;
   const originalHeight = selectedPreset?.originalHeight || 824;
   const aspectRatio = originalHeight / originalWidth;
   const containerHeight = containerWidth * aspectRatio;
 
-  // Đảm bảo container không quá cao
   const maxContainerHeight = screenHeight * 0.55;
   const finalContainerHeight = Math.min(containerHeight, maxContainerHeight);
   const finalContainerWidth = aspectRatio > 1 ? finalContainerHeight / aspectRatio : containerWidth;
@@ -192,7 +188,6 @@ export default function EditScreen({ navigation, route }) {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaView style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
             <Text style={styles.headerButtonText}>Huỷ</Text>
@@ -203,7 +198,6 @@ export default function EditScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        {/* Main editing area */}
         <View style={styles.editingArea}>
           <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
             <View

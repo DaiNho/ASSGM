@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react'; // Bỏ useState vì không còn dùng
 import {
   Text,
   SafeAreaView,
@@ -6,19 +6,16 @@ import {
   TouchableOpacity,
   View,
   ImageBackground,
-  Image,
 } from 'react-native';
 
 export default function HomeScreen({ navigation }) {
-  const [model, setModel] = useState('preset');
 
   return (
     <ImageBackground
-      source={require('./assets/8.jpg')} // Ảnh nền của bạn
+      source={require('./assets/8.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
-      {/* 👇 Lớp phủ đậm ảnh nền */}
       <View style={styles.darkOverlay} />
 
       <SafeAreaView style={styles.overlay}>
@@ -38,8 +35,7 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             style={[styles.button, styles.aiButton]}
             onPress={() => {
-              setModel('ai');
-              alert('🚧 Tính năng AI đang được phát triển!');
+              navigation.navigate('AIScreen'); 
             }}
           >
             <Text style={styles.buttonText}>🤖 Chế độ AI</Text>
@@ -48,7 +44,6 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             style={[styles.button, styles.randomButton]}
             onPress={() => {
-              setModel('random');
               alert('🎲 Tính năng Random đang được phát triển!');
             }}
           >
@@ -60,6 +55,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
+// Styles không thay đổi
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -67,7 +63,6 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'relative',
   },
-  // 👇 Lớp phủ làm tối ảnh nền
   darkOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.4)', 
@@ -83,12 +78,6 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 30,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
-    marginBottom: 10,
   },
   title: {
     fontSize: 26,
@@ -108,7 +97,7 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingVertical: 12,
-    paddingHorizontal: 24, // Chiều dài vừa phải
+    paddingHorizontal: 24,
     borderRadius: 20,
     marginVertical: 6,
     minWidth: 180,
