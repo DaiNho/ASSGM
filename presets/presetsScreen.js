@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
   PermissionsAndroid,
+  TextInput,
 } from "react-native";
 import * as MediaLibrary from "expo-media-library";
 import ViewShot from "react-native-view-shot";
@@ -29,6 +30,11 @@ const getPresetHeight = (preset) => {
   return baseHeight + 120;
 };
 
+const getUniqueLabels = () => {
+  const labels = presets.map((preset) => preset.label);
+  return [...new Set(labels)];
+};
+
 export default function PresetsScreen({
   navigation,
   route,
@@ -45,6 +51,34 @@ export default function PresetsScreen({
   const totalSlots = selectedPreset?.slots.length || 0;
   const [editedResult, setEditedResult] = useState(null);
   const framePreviewRef = useRef();
+
+  // States cho tìm kiếm và filter
+  const [searchText, setSearchText] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [filteredPresets, setFilteredPresets] = useState(presets);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Lấy danh sách unique labels
+  const uniqueLabels = getUniqueLabels();
+
+  // Effect để filter presets
+  useEffect(() => {
+    let filtered = presets;
+
+    // Filter theo label được chọn
+    if (selectedFilter !== "all") {
+      filtered = filtered.filter((preset) => preset.label === selectedFilter);
+    }
+
+    // Filter theo search text
+    if (searchText.trim()) {
+      filtered = filtered.filter((preset) =>
+        preset.label.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    setFilteredPresets(filtered);
+  }, [searchText, selectedFilter]);
 
   useEffect(() => {
     if (route.params?.aiGeneratedPreset) {
@@ -158,6 +192,17 @@ export default function PresetsScreen({
     }
   };
 
+  // Xử lý filter button
+  const handleFilterPress = (label) => {
+    setSelectedFilter(label);
+    setShowFilters(false);
+  };
+
+  const getSelectedFilterName = () => {
+    if (selectedFilter === "all") return "Tất cả";
+    return selectedFilter;
+  };
+
   if (!selectedPreset) {
     return (
       <View style={styles.container}>
@@ -166,9 +211,80 @@ export default function PresetsScreen({
           <Text style={styles.headerSubtitle}>
             Hãy chọn một khung ảnh mà bạn yêu thích
           </Text>
+
+          {/* Thanh tìm kiếm và filter compact */}
+          <View style={styles.searchFilterContainer}>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Tìm kiếm..."
+                value={searchText}
+                onChangeText={setSearchText}
+                placeholderTextColor="#999"
+              />
+              <Text style={styles.searchIcon}>🔍</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.filterToggle}
+              onPress={() => setShowFilters(!showFilters)}
+            >
+              <Text style={styles.filterToggleText}>
+                {getSelectedFilterName()}
+              </Text>
+              <Text style={styles.filterToggleIcon}>
+                {showFilters ? "▲" : "▼"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Dropdown filter */}
+          {showFilters && (
+            <View style={styles.filterDropdown}>
+              <TouchableOpacity
+                style={[
+                  styles.filterItem,
+                  selectedFilter === "all" && styles.filterItemActive,
+                ]}
+                onPress={() => handleFilterPress("all")}
+              >
+                <Text
+                  style={[
+                    styles.filterItemText,
+                    selectedFilter === "all" && styles.filterItemTextActive,
+                  ]}
+                >
+                  Tất cả ({presets.length})
+                </Text>
+              </TouchableOpacity>
+              {uniqueLabels.map((label, index) => {
+                const count = presets.filter((p) => p.label === label).length;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.filterItem,
+                      selectedFilter === label && styles.filterItemActive,
+                    ]}
+                    onPress={() => handleFilterPress(label)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterItemText,
+                        selectedFilter === label && styles.filterItemTextActive,
+                      ]}
+                    >
+                      {label} ({count})
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
+
         <FlatList
-          data={presets}
+          data={filteredPresets}
           numColumns={2}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => {
@@ -180,6 +296,7 @@ export default function PresetsScreen({
                   setSelectedPreset(item);
                   setUserImages(Array(item.slots.length).fill(null));
                   setEditedResult(null);
+                  setShowFilters(false);
                 }}
               >
                 <View style={[styles.imageContainer, { height: presetHeight }]}>
@@ -202,6 +319,16 @@ export default function PresetsScreen({
           }}
           contentContainerStyle={styles.presetsList}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                Không tìm thấy khung ảnh phù hợp
+              </Text>
+              <Text style={styles.emptySubtext}>
+                Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+              </Text>
+            </View>
+          }
         />
       </View>
     );
@@ -385,7 +512,110 @@ const styles = StyleSheet.create({
     color: "#212529",
     marginBottom: 4,
   },
-  headerSubtitle: { fontSize: 16, color: "#6c757d" },
+  headerSubtitle: { fontSize: 16, color: "#6c757d", marginBottom: 16 },
+
+  // Styles mới cho search và filter compact
+  searchFilterContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+    height: 40,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#212529",
+  },
+  searchIcon: {
+    fontSize: 16,
+    color: "#6c757d",
+  },
+
+  // Filter toggle button
+  filterToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+    height: 40,
+    minWidth: 80,
+  },
+  filterToggleText: {
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "500",
+    marginRight: 6,
+  },
+  filterToggleIcon: {
+    fontSize: 12,
+    color: "#6c757d",
+  },
+
+  // Dropdown filter
+  filterDropdown: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    maxHeight: 200,
+  },
+  filterItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f8f9fa",
+  },
+  filterItemActive: {
+    backgroundColor: "#e3f2fd",
+  },
+  filterItemText: {
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "500",
+  },
+  filterItemTextActive: {
+    color: "#1976d2",
+    fontWeight: "600",
+  },
+
+  // Empty state
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#6c757d",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#adb5bd",
+    textAlign: "center",
+  },
+
   presetsList: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 },
   presetCard: {
     width: itemWidth,
