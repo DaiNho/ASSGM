@@ -121,6 +121,7 @@ export const presets = [
       { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
+
   {
     id: 12,
     label: "Khung hiện đại",
@@ -145,6 +146,7 @@ export const presets = [
       { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
+
   {
     id: 14,
     label: "Khung hiện đại",
@@ -155,6 +157,23 @@ export const presets = [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 }
+    ],
+  },
+  {
+    id: 15,
+    label: "Khung Airmail",
+    image: require("../assets/15.png"),
+    originalWidth: 400,
+    originalHeight: 600,
+    slots: [
+      { x: 30, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
+
     ],
   },
 ];
