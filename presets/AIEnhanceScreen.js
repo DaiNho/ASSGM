@@ -23,7 +23,7 @@ const AIScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const analyzeMood = async (message) => {
-    const apiKey = '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'; // Thay bằng OpenAI API key thật
+    const apiKey = ''; // Thay bằng OpenAI API key thật
     const url = 'https://api.openai.com/v1/chat/completions';
 
     const body = {
