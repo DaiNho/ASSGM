@@ -101,10 +101,10 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen}  options={{ headerShown: false }}/>
-  <Stack.Screen 
-          name="AIScreen" 
-          component={AIScreen} 
+        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="AIScreen"
+          component={AIScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen name="Preset" options={{ title: 'Khung mẫu' }}>
