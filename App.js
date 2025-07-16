@@ -1,16 +1,19 @@
 // File: App.js
-import React, { useState } from 'react';
-import * as ImagePicker from 'expo-image-picker';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React, { useState, useEffect } from "react";
+import { Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import HomeScreen from './HomeScreen';
-import PresetsScreen from './presets/presetsScreen';
-import EditScreen from './presets/EditScreen';
-import PreviewScreen from './presets/PreviewScreen';
-import AIScreen from './presets/AIEnhanceScreen';
+import HomeScreen from "./HomeScreen";
+import PresetsScreen from "./presets/presetsScreen";
+import EditScreen from "./presets/EditScreen";
+import PreviewScreen from "./presets/PreviewScreen";
+import AIScreen from "./presets/AIEnhanceScreen";
+
 const Stack = createNativeStackNavigator();
-//....
+
 export default function App() {
   const [selectedPreset, setSelectedPreset] = useState(null);
   const [userImages, setUserImages] = useState([]);
@@ -18,32 +21,44 @@ export default function App() {
   const [countdown, setCountdown] = useState(3);
   const [isShooting, setIsShooting] = useState(false);
 
-  const pickMultipleImages = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      quality: 1,
-    });
+  // ✅ Xin quyền camera và thư viện ảnh khi app khởi động
+  useEffect(() => {
+    const requestPermissions = async () => {
+      const { status: cameraStatus } =
+        await ImagePicker.requestCameraPermissionsAsync();
+      const { status: mediaStatus } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!result.canceled) {
-      const updated = [...userImages];
-      const selected = result.assets;
-
-      let selectedIndex = 0;
-      for (let i = 0; i < updated.length; i++) {
-        if (!updated[i] && selectedIndex < selected.length) {
-          updated[i] = selected[selectedIndex].uri;
-          selectedIndex++;
-        }
+      if (cameraStatus !== "granted" || mediaStatus !== "granted") {
+        Alert.alert(
+          "Thiếu quyền truy cập",
+          "Vui lòng cấp quyền truy cập Camera và Thư viện để sử dụng ứng dụng."
+        );
       }
+    };
 
-      setUserImages(updated);
-    }
+    requestPermissions();
+  }, []);
+
+  // ✅ Tính aspect ratio của slot
+  const getSlotAspectRatio = (slot) => {
+    return slot.width / slot.height;
   };
 
-  const takePhoto = async (index) => {
+  // ✅ Chụp ảnh với crop theo tỷ lệ slot
+  const takePhotoWithCrop = async (index) => {
+    if (!selectedPreset || !selectedPreset.slots[index]) {
+      Alert.alert("Lỗi", "Không tìm thấy thông tin slot");
+      return;
+    }
+
+    const slot = selectedPreset.slots[index];
+    const aspectRatio = getSlotAspectRatio(slot);
+
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [slot.width, slot.height], // Tỷ lệ crop theo slot
       quality: 1,
     });
 
@@ -57,9 +72,19 @@ export default function App() {
     }
   };
 
-  const handleSelectImage = async (index) => {
+  // ✅ Chọn ảnh từ thư viện với crop
+  const handleSelectImageWithCrop = async (index) => {
+    if (!selectedPreset || !selectedPreset.slots[index]) {
+      Alert.alert("Lỗi", "Không tìm thấy thông tin slot");
+      return;
+    }
+
+    const slot = selectedPreset.slots[index];
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [slot.width, slot.height], // Tỷ lệ crop theo slot
       quality: 1,
     });
 
@@ -71,10 +96,58 @@ export default function App() {
     }
   };
 
-  const autoCaptureForSlots = async (index) => {
-    if (index >= selectedPreset.slots.length) {
+  // ✅ Chọn nhiều ảnh với crop tự động
+  const pickMultipleImagesWithCrop = async () => {
+    if (!selectedPreset) {
+      Alert.alert("Lỗi", "Vui lòng chọn preset trước");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 1,
+      // Không thể set aspect ratio cho multiple selection
+      // Sẽ cần crop từng ảnh một sau khi chọn
+    });
+
+    if (!result.canceled) {
+      const selected = result.assets;
+      const updated = [...userImages];
+
+      // Crop từng ảnh theo slot tương ứng
+      let selectedIndex = 0;
+      for (
+        let i = 0;
+        i < updated.length && selectedIndex < selected.length;
+        i++
+      ) {
+        if (!updated[i]) {
+          // Crop ảnh theo slot
+          const slot = selectedPreset.slots[i];
+          if (slot) {
+            // Lưu ảnh tạm thời và crop sau
+            updated[i] = selected[selectedIndex].uri;
+            selectedIndex++;
+          }
+        }
+      }
+
+      setUserImages(updated);
+
+      // Thông báo để user biết có thể cần crop thêm
+      Alert.alert(
+        "Thông báo",
+        "Ảnh đã được thêm. Bạn có thể chỉnh sửa từng ảnh để phù hợp với khung."
+      );
+    }
+  };
+
+  // ✅ Chụp ảnh tự động với crop
+  const autoCaptureForSlotsWithCrop = async (index) => {
+    if (!selectedPreset || index >= selectedPreset.slots.length) {
       setCurrentSlotIndex(null);
-      alert('✅ Đã chụp xong tất cả ảnh!');
+      alert("✅ Đã chụp xong tất cả ảnh!");
       return;
     }
 
@@ -89,8 +162,8 @@ export default function App() {
           setCountdown(3);
           setIsShooting(false);
           (async () => {
-            await takePhoto(index);
-            autoCaptureForSlots(index + 1);
+            await takePhotoWithCrop(index);
+            autoCaptureForSlotsWithCrop(index + 1);
           })();
         }
         return prev - 1;
@@ -98,16 +171,26 @@ export default function App() {
     }, 1000);
   };
 
+  // ✅ Giữ lại hàm cũ cho tương thích ngược
+  const pickMultipleImages = pickMultipleImagesWithCrop;
+  const takePhoto = takePhotoWithCrop;
+  const handleSelectImage = handleSelectImageWithCrop;
+  const autoCaptureForSlots = autoCaptureForSlotsWithCrop;
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="AIScreen"
           component={AIScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="Preset" options={{ title: 'Khung mẫu' }}>
+        <Stack.Screen name="Preset" options={{ title: "Khung mẫu" }}>
           {(props) => (
             <PresetsScreen
               {...props}
@@ -122,10 +205,13 @@ export default function App() {
               isShooting={isShooting}
               setIsShooting={setIsShooting}
               handleSelectImage={handleSelectImage}
+              // Thêm các hàm mới
+              takePhotoWithCrop={takePhotoWithCrop}
+              handleSelectImageWithCrop={handleSelectImageWithCrop}
+              getSlotAspectRatio={getSlotAspectRatio}
             />
           )}
         </Stack.Screen>
-
         <Stack.Screen
           name="EditScreen"
           component={EditScreen}
@@ -134,7 +220,7 @@ export default function App() {
         <Stack.Screen
           name="PreviewScreen"
           component={PreviewScreen}
-          options={{ title: 'Xem trước ảnh' }}
+          options={{ title: "Xem trước ảnh" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import * as MediaLibrary from "expo-media-library";
 import ViewShot from "react-native-view-shot";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { presets } from "./presets";
 import FramePreview from "./FramePreview";
 
@@ -51,6 +52,7 @@ export default function PresetsScreen({
   const totalSlots = selectedPreset?.slots.length || 0;
   const [editedResult, setEditedResult] = useState(null);
   const framePreviewRef = useRef();
+  const [isRandomMode, setIsRandomMode] = useState(false);
 
   // States cho tìm kiếm và filter
   const [searchText, setSearchText] = useState("");
@@ -58,12 +60,64 @@ export default function PresetsScreen({
   const [filteredPresets, setFilteredPresets] = useState(presets);
   const [showFilters, setShowFilters] = useState(false);
 
+  // States cho favorites
+  const [favoritePresets, setFavoritePresets] = useState([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
   // Lấy danh sách unique labels
   const uniqueLabels = getUniqueLabels();
 
-  // Effect để filter presets
+  // Functions để xử lý favorites
+  const loadFavorites = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem("favoritePresets");
+      if (favorites) {
+        setFavoritePresets(JSON.parse(favorites));
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
+  };
+
+  const saveFavorites = async (newFavorites) => {
+    try {
+      await AsyncStorage.setItem(
+        "favoritePresets",
+        JSON.stringify(newFavorites)
+      );
+      setFavoritePresets(newFavorites);
+    } catch (error) {
+      console.error("Error saving favorites:", error);
+    }
+  };
+
+  const toggleFavorite = (presetId) => {
+    const newFavorites = favoritePresets.includes(presetId)
+      ? favoritePresets.filter((id) => id !== presetId)
+      : [...favoritePresets, presetId];
+
+    saveFavorites(newFavorites);
+  };
+
+  const isFavorite = (presetId) => {
+    return favoritePresets.includes(presetId);
+  };
+
+  // Load favorites khi component mount
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  // Effect để filter presets (đã cập nhật để bao gồm favorites)
   useEffect(() => {
     let filtered = presets;
+
+    // Filter theo favorites nếu được chọn
+    if (showFavoritesOnly) {
+      filtered = filtered.filter((preset) =>
+        favoritePresets.includes(preset.id)
+      );
+    }
 
     // Filter theo label được chọn
     if (selectedFilter !== "all") {
@@ -78,7 +132,30 @@ export default function PresetsScreen({
     }
 
     setFilteredPresets(filtered);
-  }, [searchText, selectedFilter]);
+  }, [searchText, selectedFilter, favoritePresets, showFavoritesOnly]);
+
+  // Xử lý random mode khi component mount
+  useEffect(() => {
+    if (route.params?.randomMode && route.params?.selectedPreset) {
+      const randomPreset = route.params.selectedPreset;
+      setSelectedPreset(randomPreset);
+      setUserImages(Array(randomPreset.slots.length).fill(null));
+      setEditedResult(null);
+      setIsRandomMode(true);
+
+      // Clear params để tránh xử lý lặp lại
+      navigation.setParams({
+        randomMode: undefined,
+        selectedPreset: undefined,
+      });
+    }
+  }, [
+    route.params?.randomMode,
+    route.params?.selectedPreset,
+    navigation,
+    setSelectedPreset,
+    setUserImages,
+  ]);
 
   useEffect(() => {
     if (route.params?.aiGeneratedPreset) {
@@ -86,6 +163,7 @@ export default function PresetsScreen({
       setSelectedPreset(presetFromAI);
       setUserImages(Array(presetFromAI.slots.length).fill(null));
       setEditedResult(null);
+      setIsRandomMode(false);
 
       navigation.setParams({ aiGeneratedPreset: undefined });
     }
@@ -120,6 +198,30 @@ export default function PresetsScreen({
           onPress: () => {
             setSelectedPreset(null);
             setUserImages([]);
+            setEditedResult(null);
+            setIsRandomMode(false);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRandomizeAgain = () => {
+    // Chọn ngẫu nhiên một preset khác
+    const randomIndex = Math.floor(Math.random() * presets.length);
+    const newRandomPreset = presets[randomIndex];
+
+    Alert.alert(
+      "Chọn khung mới?",
+      "Bạn sẽ mất tất cả ảnh đã chọn. Bạn có chắc chắn?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Đồng ý",
+          style: "destructive",
+          onPress: () => {
+            setSelectedPreset(newRandomPreset);
+            setUserImages(Array(newRandomPreset.slots.length).fill(null));
             setEditedResult(null);
           },
         },
@@ -203,6 +305,33 @@ export default function PresetsScreen({
     return selectedFilter;
   };
 
+  // Render empty component cho favorites
+  const renderEmptyComponent = () => {
+    if (showFavoritesOnly) {
+      return (
+        <View style={favoriteStyles.favoriteEmptyContainer}>
+          <Text style={favoriteStyles.favoriteEmptyIcon}>💔</Text>
+          <Text style={favoriteStyles.favoriteEmptyText}>
+            Chưa có khung ảnh yêu thích
+          </Text>
+          <Text style={favoriteStyles.favoriteEmptySubtext}>
+            Nhấn vào biểu tượng trái tim trên khung ảnh{"\n"}để thêm vào danh
+            sách yêu thích
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>Không tìm thấy khung ảnh phù hợp</Text>
+        <Text style={styles.emptySubtext}>
+          Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+        </Text>
+      </View>
+    );
+  };
+
   if (!selectedPreset) {
     return (
       <View style={styles.container}>
@@ -257,6 +386,24 @@ export default function PresetsScreen({
                   Tất cả ({presets.length})
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterItem,
+                  showFavoritesOnly && styles.filterItemActive,
+                ]}
+                onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              >
+                <Text
+                  style={[
+                    styles.filterItemText,
+                    showFavoritesOnly && styles.filterItemTextActive,
+                  ]}
+                >
+                  ❤️ Yêu thích ({favoritePresets.length})
+                </Text>
+              </TouchableOpacity>
+
               {uniqueLabels.map((label, index) => {
                 const count = presets.filter((p) => p.label === label).length;
                 return (
@@ -297,9 +444,20 @@ export default function PresetsScreen({
                   setUserImages(Array(item.slots.length).fill(null));
                   setEditedResult(null);
                   setShowFilters(false);
+                  setIsRandomMode(false);
                 }}
               >
                 <View style={[styles.imageContainer, { height: presetHeight }]}>
+                  {/* Favorite button */}
+                  <TouchableOpacity
+                    style={favoriteStyles.favoriteButton}
+                    onPress={() => toggleFavorite(item.id)}
+                  >
+                    <Text style={favoriteStyles.favoriteIcon}>
+                      {isFavorite(item.id) ? "❤️" : "🤍"}
+                    </Text>
+                  </TouchableOpacity>
+
                   <Image
                     source={item.image}
                     style={[styles.presetImage, { height: presetHeight - 24 }]}
@@ -319,16 +477,7 @@ export default function PresetsScreen({
           }}
           contentContainerStyle={styles.presetsList}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                Không tìm thấy khung ảnh phù hợp
-              </Text>
-              <Text style={styles.emptySubtext}>
-                Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
-              </Text>
-            </View>
-          }
+          ListEmptyComponent={renderEmptyComponent}
         />
       </View>
     );
@@ -343,7 +492,24 @@ export default function PresetsScreen({
         >
           <Text style={styles.backButtonText}>← Chọn khung khác</Text>
         </TouchableOpacity>
-        <Text style={styles.selectedTitle}>{selectedPreset.label}</Text>
+
+        <View style={styles.titleContainer}>
+          <Text style={styles.selectedTitle}>{selectedPreset.label}</Text>
+          {isRandomMode && (
+            <View style={styles.randomBadge}>
+              <Text style={styles.randomBadgeText}>🎲 Random</Text>
+            </View>
+          )}
+        </View>
+
+        {isRandomMode && (
+          <TouchableOpacity
+            onPress={handleRandomizeAgain}
+            style={styles.randomizeButton}
+          >
+            <Text style={styles.randomizeButtonText}>🎲 Chọn khung khác</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
@@ -496,6 +662,81 @@ export default function PresetsScreen({
   );
 }
 
+// Styles mới cho favorite feature
+const favoriteStyles = StyleSheet.create({
+  favoriteButton: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    zIndex: 1,
+  },
+  favoriteIcon: {
+    fontSize: 16,
+  },
+  favoriteToggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  favoriteToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+  },
+  favoriteToggleActive: {
+    backgroundColor: "#fff3cd",
+    borderColor: "#ffeaa7",
+  },
+  favoriteToggleText: {
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "500",
+    marginLeft: 6,
+  },
+  favoriteToggleTextActive: {
+    color: "#856404",
+    fontWeight: "600",
+  },
+  favoriteEmptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  favoriteEmptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  favoriteEmptyText: {
+    fontSize: 16,
+    color: "#6c757d",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  favoriteEmptySubtext: {
+    fontSize: 14,
+    color: "#adb5bd",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f6fa" },
   header: {
@@ -511,10 +752,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#212529",
     marginBottom: 4,
+    marginTop: -20, // hoặc -8 để lên nhiều hơn
   },
   headerSubtitle: { fontSize: 16, color: "#6c757d", marginBottom: 16 },
 
-  // Styles mới cho search và filter compact
+  // Styles cho search và filter compact
   searchFilterContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -665,23 +907,69 @@ const styles = StyleSheet.create({
   },
   backButton: { marginBottom: 8 },
   backButtonText: { color: "#007bff", fontSize: 16, fontWeight: "500" },
-  selectedTitle: { fontSize: 20, fontWeight: "bold", color: "#212529" },
-  scrollContent: { paddingBottom: 32 },
-  progressContainer: { margin: 20, marginBottom: 16 },
-  progressBar: {
-    height: 8,
-    backgroundColor: "#e9ecef",
-    borderRadius: 4,
-    overflow: "hidden",
+  // Styles mới cho random mode
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
-  progressFill: { height: "100%", backgroundColor: "#28a745", borderRadius: 4 },
-  progressText: {
-    textAlign: "center",
+  selectedTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#212529",
+    flex: 1,
+    marginRight: 12,
+  },
+  randomBadge: {
+    backgroundColor: "#ff6b6b",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  randomBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  randomizeButton: {
+    backgroundColor: "#ff6b6b",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  randomizeButtonText: {
+    color: "#fff",
     fontSize: 14,
-    color: "#6c757d",
     fontWeight: "500",
   },
+
+  scrollContent: { paddingBottom: 32 },
+  progressContainer: {
+    marginTop: 8,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  progressBar: {
+    width: "85%",
+    height: 6, // 👈 giảm từ 12 xuống
+    backgroundColor: "#eee",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#4caf50",
+  },
+  progressText: {
+    fontSize: 12, // 👈 nhỏ lại chút
+    color: "#666",
+    marginTop: 4,
+  },
+
   previewContainer: {
     alignItems: "center",
     marginBottom: 20,
