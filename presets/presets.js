@@ -5,7 +5,7 @@ export const presets = [
     image: require("../assets/1.png"),
     slots: [
       { x: 45, y: 148, width: 223, height: 223 },
-      { x: 45, y: 148, width: 223, height: 223 },
+      { x: 330, y: 234, width: 218, height: 234 },
       { x: 45, y: 148, width: 223, height: 223 },
       { x: 45, y: 148, width: 223, height: 223 },
     ],
