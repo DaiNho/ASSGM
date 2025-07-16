@@ -3,26 +3,30 @@ export const presets = [
     id: 1,
     label: "Khung cổ điển",
     image: require("../assets/1.png"),
+    originalWidth: 339,
+    originalHeight: 824,
     slots: [
-      { x: 222, y: 97, width: 291, height: 214 },
-      { x: 222, y: 339, width: 293, height: 207 },
-      { x: 227, y: 575, width: 284, height: 209 },
+      { x: 25, y: 34, width: 285, height: 212 },
+      { x: 20, y: 272, width: 299, height: 207 },
+      { x: 28, y: 508, width: 285, height: 212 },
     ],
   },
   {
     id: 2,
     label: "Khung hiện đại",
-    image: require("../assets/2.jpg"),
+    image: require("../assets/2.png"),
+    originalWidth: 736,
+    originalHeight: 2208,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 60, y: 86, width: 612, height: 400 },
+      { x: 60, y: 542, width: 624, height: 418 },
       { x: 30, y: 40, width: 120, height: 160 }
     ],
   },
   {
     id: 3,
     label: "Khung hiện đại",
-    image: require("../assets/3.jpg"),
+    image: require("../assets/3.png"),
     originalWidth: 400,
     originalHeight: 700,
     slots: [
@@ -36,7 +40,7 @@ export const presets = [
   {
     id: 4,
     label: "Khung hiện đại",
-    image: require("../assets/4.jpg"),
+    image: require("../assets/4.png"),
     originalWidth: 400,
     originalHeight: 800,
     slots: [
@@ -53,7 +57,7 @@ export const presets = [
   {
     id: 5,
     label: "Khung hiện đại",
-    image: require("../assets/5.jpg"),
+    image: require("../assets/5.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -65,7 +69,7 @@ export const presets = [
   {
     id: 6,
     label: "Khung hiện đại",
-    image: require("../assets/6.jpg"),
+    image: require("../assets/6.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -77,7 +81,7 @@ export const presets = [
   {
     id: 8,
     label: "Khung hiện đại",
-    image: require("../assets/8.jpg"),
+    image: require("../assets/8.png"),
     originalWidth: 400,
     originalHeight: 500,
     slots: [
@@ -88,7 +92,7 @@ export const presets = [
   {
     id: 9,
     label: "Khung hiện đại",
-    image: require("../assets/9.jpg"),
+    image: require("../assets/9.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -100,7 +104,7 @@ export const presets = [
   {
     id: 10,
     label: "Khung hiện đại",
-    image: require("../assets/10.jpg"),
+    image: require("../assets/10.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -112,7 +116,7 @@ export const presets = [
   {
     id: 11,
     label: "Khung hiện đại",
-    image: require("../assets/11.jpg"),
+    image: require("../assets/11.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -124,7 +128,7 @@ export const presets = [
   {
     id: 12,
     label: "Khung hiện đại",
-    image: require("../assets/12.jpg"),
+    image: require("../assets/12.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -136,7 +140,7 @@ export const presets = [
   {
     id: 13,
     label: "Khung hiện đại",
-    image: require("../assets/13.jpg"),
+    image: require("../assets/13.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
@@ -148,7 +152,7 @@ export const presets = [
   {
     id: 14,
     label: "Khung hiện đại",
-    image: require("../assets/14.jpg"),
+    image: require("../assets/14.png"),
     originalWidth: 400,
     originalHeight: 600,
     slots: [
