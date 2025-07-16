@@ -16,7 +16,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
+      { x: 30, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -30,7 +30,7 @@ export const presets = [
       { x: 180, y: 40, width: 120, height: 160 },
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
+      { x: 30, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -47,7 +47,7 @@ export const presets = [
       { x: 180, y: 40, width: 120, height: 160 },
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
+      { x: 30, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -59,7 +59,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -71,7 +71,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -82,7 +82,7 @@ export const presets = [
     originalHeight: 500,
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -94,7 +94,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -106,7 +106,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -118,7 +118,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -130,7 +130,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -142,7 +142,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -154,7 +154,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -166,7 +166,7 @@ export const presets = [
     slots: [
       { x: 30, y: 40, width: 120, height: 160 },
       { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
+      { x: 180, y: 40, width: 120, height: 160 }
     ],
   },
   {
@@ -179,7 +179,7 @@ export const presets = [
       { x: 28, y: 92, width: 323, height: 430 },
       { x: 28, y: 92, width: 323, height: 430 },
       { x: 28, y: 92, width: 323, height: 430 },
-      { x: 28, y: 92, width: 323, height: 430 },
+      { x: 28, y: 92, width: 323, height: 430 }
     ],
   },
   {
@@ -191,7 +191,7 @@ export const presets = [
     slots: [
       { x: 38, y: 37, width: 652, height: 421 },
       { x: 38, y: 37, width: 652, height: 421 },
-      { x: 38, y: 37, width: 652, height: 421 },
+      { x: 38, y: 37, width: 652, height: 421 }
     ],
   },
   {
@@ -203,7 +203,7 @@ export const presets = [
     slots: [
       { x: 38, y: 37, width: 652, height: 421 },
       { x: 38, y: 37, width: 652, height: 421 },
-      { x: 38, y: 37, width: 652, height: 421 },
+      { x: 38, y: 37, width: 652, height: 421 }
     ],
   },
   {
@@ -220,7 +220,7 @@ export const presets = [
       { x: 387, y: 31, width: 329, height: 238 },
       { x: 387, y: 31, width: 329, height: 238 },
       { x: 387, y: 31, width: 329, height: 238 },
-      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 }
     ],
   },
   {
@@ -235,7 +235,7 @@ export const presets = [
       { x: 154, y: 232, width: 193, height: 173 },
       { x: 154, y: 232, width: 193, height: 173 },
       { x: 154, y: 232, width: 193, height: 173 },
-      { x: 154, y: 232, width: 193, height: 173 },
+      { x: 154, y: 232, width: 193, height: 173 }
     ],
   },
   {
@@ -252,7 +252,7 @@ export const presets = [
       { x: 33, y: 206, width: 302, height: 195 },
       { x: 33, y: 206, width: 302, height: 195 },
       { x: 33, y: 206, width: 302, height: 195 },
-      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 }
     ],
   },
   {
@@ -263,7 +263,7 @@ export const presets = [
     originalHeight: 600,
     slots: [
       { x: 34, y: 35, width: 672, height: 551 },
-      { x: 30, y: 601, width: 680, height: 549 },
+      { x: 30, y: 601, width: 680, height: 549 }
     ],
   },
   {
@@ -276,7 +276,7 @@ export const presets = [
       { x: 244, y: 43, width: 274, height: 190 },
       { x: 244, y: 43, width: 274, height: 190 },
       { x: 244, y: 43, width: 274, height: 190 },
-      { x: 244, y: 43, width: 274, height: 190 },
+      { x: 244, y: 43, width: 274, height: 190 }
     ],
   },
   {
@@ -289,7 +289,7 @@ export const presets = [
       { x: 20, y: 143, width: 330, height: 503 },
       { x: 20, y: 143, width: 330, height: 503 },
       { x: 20, y: 143, width: 330, height: 503 },
-      { x: 20, y: 143, width: 330, height: 503 },
+      { x: 20, y: 143, width: 330, height: 503 }
     ],
   },
   {
@@ -302,7 +302,7 @@ export const presets = [
       { x: 36, y: 49, width: 309, height: 451 },
       { x: 36, y: 49, width: 309, height: 451 },
       { x: 36, y: 49, width: 309, height: 451 },
-      { x: 36, y: 49, width: 309, height: 451 },
+      { x: 36, y: 49, width: 309, height: 451 }
     ],
   },
   {
@@ -315,7 +315,7 @@ export const presets = [
       { x: 40, y: 43, width: 328, height: 431 },
       { x: 40, y: 43, width: 328, height: 431 },
       { x: 40, y: 43, width: 328, height: 431 },
-      { x: 40, y: 43, width: 328, height: 431 },
+      { x: 40, y: 43, width: 328, height: 431 }
     ],
   },
   {
@@ -332,7 +332,7 @@ export const presets = [
       { x: 28, y: 61, width: 358, height: 261 },
       { x: 28, y: 61, width: 358, height: 261 },
       { x: 28, y: 61, width: 358, height: 261 },
-      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 }
     ],
   },
   {
@@ -349,7 +349,7 @@ export const presets = [
       { x: 42, y: 119, width: 450, height: 322 },
       { x: 42, y: 119, width: 450, height: 322 },
       { x: 42, y: 119, width: 450, height: 322 },
-      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 }
     ],
   },
   {
@@ -366,7 +366,7 @@ export const presets = [
       { x: 36, y: 26, width: 331, height: 223 },
       { x: 36, y: 26, width: 331, height: 223 },
       { x: 36, y: 26, width: 331, height: 223 },
-      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 }
     ],
   },
 ];
