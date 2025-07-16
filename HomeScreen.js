@@ -1,4 +1,4 @@
-import React from "react"; // Bỏ useState vì không còn dùng
+import React from "react";
 import {
   Text,
   SafeAreaView,
@@ -7,8 +7,21 @@ import {
   View,
   ImageBackground,
 } from "react-native";
+import { presets } from "./presets/presets"; // Import presets để có thể random
 
 export default function HomeScreen({ navigation }) {
+  const handleRandomMode = () => {
+    // Chọn ngẫu nhiên một preset từ danh sách
+    const randomIndex = Math.floor(Math.random() * presets.length);
+    const randomPreset = presets[randomIndex];
+
+    // Chuyển sang PresetScreen với preset đã được chọn random
+    navigation.navigate("Preset", {
+      randomMode: true,
+      selectedPreset: randomPreset,
+    });
+  };
+
   return (
     <ImageBackground
       source={require("./assets/8.jpg")}
@@ -42,9 +55,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.button, styles.randomButton]}
-            onPress={() => {
-              alert("🎲 Tính năng Random đang được phát triển!");
-            }}
+            onPress={handleRandomMode}
           >
             <Text style={styles.buttonText}>🎲 Chế độ Random</Text>
           </TouchableOpacity>
@@ -54,7 +65,6 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-// Styles không thay đổi
 const styles = StyleSheet.create({
   background: {
     flex: 1,

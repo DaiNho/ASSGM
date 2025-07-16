@@ -1,830 +1,594 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
   Alert,
-  Platform,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Share,
+  ImageBackground,
+  SafeAreaView,
   Dimensions,
-  Image,
-} from 'react-native';
-import { Camera } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as MediaLibrary from 'expo-media-library';
-// Thay đổi import này
-import Slider from '@react-native-community/slider';
+  StatusBar,
+} from "react-native";
+import * as Clipboard from "expo-clipboard";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
+const GEMINI_API_KEY = "AIzaSyC5AQUdhW07udAneOUrcJlW8tq6a3cfBPE";
 
-// AI-powered image processing functions
-const enhanceImageWithAI = async (imageUri, settings) => {
+// Utility functions
+const checkNetworkConnection = async () => {
   try {
-    const actions = [];
-    
-    // Auto brightness adjustment
-    if (settings.brightness !== 0) {
-      actions.push({
-        brightness: settings.brightness,
-      });
-    }
-    
-    // Auto contrast
-    if (settings.contrast !== 0) {
-      actions.push({
-        contrast: settings.contrast,
-      });
-    }
-    
-    // Auto saturation
-    if (settings.saturation !== 0) {
-      actions.push({
-        saturation: settings.saturation,
-      });
-    }
-    
-    // Auto crop (smart crop based on face detection simulation)
-    if (settings.smartCrop) {
-      actions.push({
-        crop: {
-          originX: 0.1,
-          originY: 0.1,
-          width: 0.8,
-          height: 0.8,
-        },
-      });
-    }
-    
-    // Auto sharpen
-    if (settings.sharpen > 0) {
-      // Simulate sharpening effect through resize
-      actions.push({
-        resize: {
-          width: undefined,
-          height: undefined,
-        },
-      });
-    }
-
-    const result = await ImageManipulator.manipulateAsync(
-      imageUri,
-      actions,
-      {
-        compress: 0.9,
-        format: ImageManipulator.SaveFormat.JPEG,
-      }
-    );
-
-    return result;
+    const response = await fetch("https://www.google.com", {
+      method: "HEAD",
+      timeout: 5000,
+    });
+    return response.ok;
   } catch (error) {
-    console.error('AI Enhancement error:', error);
-    throw error;
+    return false;
   }
 };
 
-// Enhanced AI analysis simulation with more realistic parameters
-const analyzeImage = (imageUri) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate more sophisticated AI analysis
-      const analysis = {
-        brightness: (Math.random() - 0.5) * 0.4, // -0.2 to 0.2
-        contrast: (Math.random() - 0.5) * 0.3,   // -0.15 to 0.15
-        saturation: (Math.random() - 0.5) * 0.2, // -0.1 to 0.1
-        sharpness: Math.random() * 0.5,
-        faceDetected: Math.random() > 0.4,
-        lightingCondition: ['good', 'low', 'overexposed'][Math.floor(Math.random() * 3)],
-        colorBalance: ['warm', 'cool', 'neutral'][Math.floor(Math.random() * 3)],
-        quality: Math.random() * 30 + 70, // 70-100
-        noiseLevel: Math.random() * 0.3,   // 0-0.3
-        skinTone: Math.random() > 0.6,     // Skin detection
-      };
-      resolve(analysis);
-    }, 2000); // Slightly longer for more realistic feel
-  });
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const retryWithBackoff = async (fn, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+
+      const delayTime = Math.pow(2, i) * 1000;
+      console.log(`Retry ${i + 1}/${maxRetries} after ${delayTime}ms`);
+      await delay(delayTime);
+    }
+  }
 };
 
-export default function AIScreen({ navigation }) {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [enhancedImage, setEnhancedImage] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
-  const [processingStep, setProcessingStep] = useState('');
-  
-  // Enhancement settings
-  const [brightness, setBrightness] = useState(0);
-  const [contrast, setContrast] = useState(0);
-  const [saturation, setSaturation] = useState(0);
-  const [sharpen, setSharpen] = useState(0);
-  const [smartCrop, setSmartCrop] = useState(false);
-  const [skinSmoothing, setSkinSmoothing] = useState(false);
+// API function
+const generateCaptionWithPrompt = async (userPrompt) => {
+  const hasConnection = await checkNetworkConnection();
+  if (!hasConnection) {
+    throw new Error(
+      "Không có kết nối mạng. Vui lòng kiểm tra kết nối internet."
+    );
+  }
 
-  const processingSteps = [
-    '🔍 Phân tích ảnh với AI...',
-    '🎯 Phát hiện khuôn mặt...',
-    '💡 Tối ưu ánh sáng...',
-    '🎨 Cân bằng màu sắc...',
-    '✨ Tăng cường chi tiết...',
-    '🖼️ Hoàn thiện kết quả...',
-  ];
+  const prompt = `Dựa trên yêu cầu: "${userPrompt}"
 
-  useEffect(() => {
-    const requestPermissions = async () => {
-      try {
-        const cameraPermission = await Camera.requestCameraPermissionsAsync();
-        const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
-        if (cameraPermission.status !== 'granted' || libraryPermission.status !== 'granted') {
-          Alert.alert(
-            'Cần quyền truy cập',
-            'Ứng dụng cần quyền truy cập camera và thư viện ảnh để hoạt động.',
-            [{ text: 'OK' }]
-          );
+Tạo caption:
+- Đáp ứng chính xác yêu cầu
+- Tự nhiên và hấp dẫn
+- Có emoji phù hợp
+- Độ dài phù hợp
+
+Chỉ trả về caption, không format khác.`;
+
+  const geminiGenerate = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.7,
+              topK: 1,
+              topP: 1,
+              maxOutputTokens: 2048,
+            },
+            safetySettings: [
+              {
+                category: "HARM_CATEGORY_HARASSMENT",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+              {
+                category: "HARM_CATEGORY_HATE_SPEECH",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+              {
+                category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+              {
+                category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                threshold: "BLOCK_MEDIUM_AND_ABOVE",
+              },
+            ],
+          }),
+          signal: controller.signal,
         }
-      } catch (error) {
-        console.error('Permission error:', error);
-      }
-    };
+      );
 
-    requestPermissions();
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorMessages = {
+          401: "API key không hợp lệ",
+          403: "Không có quyền truy cập API",
+          404: "API endpoint không tồn tại",
+          429: "Đã vượt quá giới hạn API",
+          400: "Yêu cầu không hợp lệ",
+        };
+
+        throw new Error(
+          errorMessages[response.status] || `Lỗi API: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error("Phản hồi API không hợp lệ hoặc bị chặn");
+      }
+
+      return data.candidates[0].content.parts[0].text.trim();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  };
+
+  return await retryWithBackoff(geminiGenerate, 3);
+};
+
+export default function AIEnhanceScreen({ navigation }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [userPrompt, setUserPrompt] = useState("");
+  const [generatedCaption, setGeneratedCaption] = useState("");
+
+  // Example prompts
+  const examplePrompts = useMemo(
+    () => [
+      {
+        icon: "😂",
+        label: "Hài hước",
+        prompt: "Tạo caption vui vẻ và hài hước về cuộc sống",
+      },
+      {
+        icon: "💼",
+        label: "Chuyên nghiệp",
+        prompt: "Viết caption chuyên nghiệp về thành công trong công việc",
+      },
+      {
+        icon: "💕",
+        label: "Lãng mạn",
+        prompt: "Tạo caption lãng mạn về tình yêu với emoji trái tim",
+      },
+      {
+        icon: "✨",
+        label: "Truyền cảm hứng",
+        prompt: "Viết caption truyền cảm hứng và tích cực về cuộc sống",
+      },
+      {
+        icon: "🌍",
+        label: "Du lịch",
+        prompt: "Tạo caption về du lịch và khám phá thế giới",
+      },
+      {
+        icon: "🍲",
+        label: "Ẩm thực",
+        prompt: "Viết caption về ẩm thực và món ăn ngon",
+      },
+    ],
+    []
+  );
+
+  const handleGenerateCaption = useCallback(async () => {
+    if (!userPrompt.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập yêu cầu cho caption");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const caption = await generateCaptionWithPrompt(userPrompt.trim());
+      setGeneratedCaption(caption);
+    } catch (error) {
+      console.error("Caption generation error:", error);
+
+      let errorMessage = "Không thể tạo caption. ";
+
+      if (error.name === "AbortError") {
+        errorMessage += "Yêu cầu bị timeout. Vui lòng thử lại.";
+      } else if (error.message.includes("Network request failed")) {
+        errorMessage += "Lỗi kết nối mạng. Vui lòng kiểm tra internet.";
+      } else {
+        errorMessage += error.message || "Vui lòng thử lại sau.";
+      }
+
+      Alert.alert("Lỗi", errorMessage);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [userPrompt]);
+
+  const copyToClipboard = useCallback(async (text) => {
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert("Thành công", "Đã copy caption!");
+    } catch (error) {
+      Alert.alert("Lỗi", "Không thể copy caption.");
+    }
   }, []);
 
-  const selectImageFromLibrary = async () => {
+  const shareCaption = useCallback(async () => {
+    if (!generatedCaption) return;
+
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 1,
+      await Share.share({
+        message: generatedCaption,
+        title: "Caption được tạo bởi AI",
       });
-
-      if (!result.canceled) {
-        setSelectedImage(result.assets[0].uri);
-        setEnhancedImage(null);
-        setAnalysis(null);
-        resetSettings();
-      }
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể chọn ảnh từ thư viện');
+      Alert.alert("Lỗi", "Không thể chia sẻ caption.");
     }
-  };
+  }, [generatedCaption]);
 
-  const takePhoto = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 1,
-      });
+  const selectExamplePrompt = useCallback((prompt) => {
+    setUserPrompt(prompt);
+  }, []);
 
-      if (!result.canceled) {
-        setSelectedImage(result.assets[0].uri);
-        setEnhancedImage(null);
-        setAnalysis(null);
-        resetSettings();
-      }
-    } catch (error) {
-      Alert.alert('Lỗi', 'Không thể chụp ảnh');
-    }
-  };
-
-  const handleAutoEnhance = async () => {
-    if (!selectedImage) {
-      Alert.alert('Thông báo', 'Vui lòng chọn ảnh trước');
-      return;
-    }
-
-    setIsProcessing(true);
-    setProcessingStep(processingSteps[0]);
-
-    try {
-      // Step 1: Analyze image
-      const imageAnalysis = await analyzeImage(selectedImage);
-      setAnalysis(imageAnalysis);
-      
-      // Step 2-6: Process image with AI recommendations
-      for (let i = 1; i < processingSteps.length; i++) {
-        setProcessingStep(processingSteps[i]);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      // Apply AI-recommended settings with enhanced logic
-      const aiSettings = {
-        brightness: imageAnalysis.brightness,
-        contrast: imageAnalysis.contrast,
-        saturation: imageAnalysis.saturation,
-        sharpen: imageAnalysis.sharpness,
-        smartCrop: imageAnalysis.faceDetected,
-        skinSmoothing: imageAnalysis.skinTone,
-      };
-
-      // Update UI settings
-      setBrightness(aiSettings.brightness);
-      setContrast(aiSettings.contrast);
-      setSaturation(aiSettings.saturation);
-      setSharpen(aiSettings.sharpen);
-      setSmartCrop(aiSettings.smartCrop);
-      setSkinSmoothing(aiSettings.skinSmoothing);
-
-      const enhanced = await enhanceImageWithAI(selectedImage, aiSettings);
-      setEnhancedImage(enhanced.uri);
-
-    } catch (error) {
-      console.error('Auto enhance error:', error);
-      Alert.alert('Lỗi', 'Không thể tăng cường ảnh tự động. Vui lòng thử lại.');
-    } finally {
-      setIsProcessing(false);
-      setProcessingStep('');
-    }
-  };
-
-  const handleManualEnhance = async () => {
-    if (!selectedImage) {
-      Alert.alert('Thông báo', 'Vui lòng chọn ảnh trước');
-      return;
-    }
-
-    setIsProcessing(true);
-    setProcessingStep('🎨 Đang áp dụng thay đổi...');
-
-    try {
-      const settings = {
-        brightness,
-        contrast,
-        saturation,
-        sharpen,
-        smartCrop,
-        skinSmoothing,
-      };
-
-      const enhanced = await enhanceImageWithAI(selectedImage, settings);
-      setEnhancedImage(enhanced.uri);
-    } catch (error) {
-      console.error('Manual enhance error:', error);
-      Alert.alert('Lỗi', 'Không thể áp dụng thay đổi');
-    } finally {
-      setIsProcessing(false);
-      setProcessingStep('');
-    }
-  };
-
-  const resetSettings = () => {
-    setBrightness(0);
-    setContrast(0);
-    setSaturation(0);
-    setSharpen(0);
-    setSmartCrop(false);
-    setSkinSmoothing(false);
-    setEnhancedImage(null);
-    setAnalysis(null);
-  };
-
-  const saveEnhancedImage = async () => {
-    if (!enhancedImage) {
-      Alert.alert('Thông báo', 'Chưa có ảnh được tăng cường');
-      return;
-    }
-
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Thiếu quyền', 'Ứng dụng cần quyền để lưu ảnh.');
-        return;
-      }
-
-      const asset = await MediaLibrary.createAssetAsync(enhancedImage);
-      await MediaLibrary.createAlbumAsync('AI Enhanced Photos', asset, false);
-      
-      Alert.alert(
-        'Thành công! 🎉',
-        'Ảnh đã được lưu vào thư viện',
-        [
-          { text: 'OK', onPress: () => {} },
-          { 
-            text: 'Sử dụng làm photobooth', 
-            onPress: () => navigation.navigate('Preset', { 
-              enhancedImage: enhancedImage 
-            })
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Save error:', error);
-      Alert.alert('Lỗi', 'Không thể lưu ảnh');
-    }
-  };
-
-  const renderAnalysisResults = () => {
-    if (!analysis) return null;
-
-    return (
-      <View style={styles.analysisContainer}>
-        <Text style={styles.analysisTitle}>📊 Phân tích AI</Text>
-        <View style={styles.analysisGrid}>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>Chất lượng:</Text>
-            <Text style={[styles.analysisValue, { color: analysis.quality > 85 ? '#28a745' : analysis.quality > 70 ? '#ffc107' : '#dc3545' }]}>
-              {Math.round(analysis.quality)}%
-            </Text>
-          </View>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>Ánh sáng:</Text>
-            <Text style={styles.analysisValue}>
-              {analysis.lightingCondition === 'good' ? '✅ Tốt' : 
-               analysis.lightingCondition === 'low' ? '🔆 Thiếu sáng' : '☀️ Quá sáng'}
-            </Text>
-          </View>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>Màu sắc:</Text>
-            <Text style={styles.analysisValue}>
-              {analysis.colorBalance === 'warm' ? '🔥 Ấm' : 
-               analysis.colorBalance === 'cool' ? '❄️ Lạnh' : '⚖️ Cân bằng'}
-            </Text>
-          </View>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>Khuôn mặt:</Text>
-            <Text style={styles.analysisValue}>
-              {analysis.faceDetected ? '👤 Có' : '❌ Không'}
-            </Text>
-          </View>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>Nhiễu:</Text>
-            <Text style={styles.analysisValue}>
-              {analysis.noiseLevel < 0.1 ? '✅ Thấp' : 
-               analysis.noiseLevel < 0.2 ? '⚠️ Trung bình' : '❌ Cao'}
-            </Text>
-          </View>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>Da:</Text>
-            <Text style={styles.analysisValue}>
-              {analysis.skinTone ? '👤 Phát hiện' : '❌ Không'}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const clearAll = useCallback(() => {
+    setUserPrompt("");
+    setGeneratedCaption("");
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
+    <ImageBackground
+      source={require("../assets/8.jpg")}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <StatusBar barStyle="light-content" backgroundColor="rgba(0,0,0,0.5)" />
+      <View style={styles.darkOverlay} />
+
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>🤖 AI Tăng Cường Ảnh</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView style={styles.scrollContainer}>
-        {/* Welcome Message */}
-        <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeTitle}>✨ Chào mừng đến với AI Photo Enhancement</Text>
-          <Text style={styles.welcomeText}>
-            Sử dụng công nghệ AI để tự động cải thiện chất lượng ảnh của bạn. 
-            Chỉ cần chọn ảnh và để AI làm phần còn lại!
-          </Text>
-        </View>
-
-        {/* Image Selection */}
-        <View style={styles.imageSelectionContainer}>
-          <Text style={styles.sectionTitle}>📸 Chọn ảnh</Text>
-          <View style={styles.imageButtonsContainer}>
-            <TouchableOpacity style={styles.imageButton} onPress={selectImageFromLibrary}>
-              <Text style={styles.imageButtonText}>📁 Từ thư viện</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.imageButton} onPress={takePhoto}>
-              <Text style={styles.imageButtonText}>📷 Chụp ảnh</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Image Preview */}
-        {selectedImage && (
-          <View style={styles.imagePreviewContainer}>
-            <Text style={styles.sectionTitle}>
-              {enhancedImage ? '✨ Kết quả so sánh' : '🖼️ Ảnh gốc'}
-            </Text>
-            <View style={styles.imageComparisonContainer}>
-              <View style={styles.imageColumn}>
-                <Text style={styles.imageLabel}>Ảnh gốc</Text>
-                <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-              </View>
-              {enhancedImage && (
-                <View style={styles.imageColumn}>
-                  <Text style={styles.imageLabel}>Đã tăng cường</Text>
-                  <Image source={{ uri: enhancedImage }} style={styles.previewImage} />
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Processing indicator */}
-        {isProcessing && (
-          <View style={styles.processingContainer}>
-            <ActivityIndicator size="large" color="#007bff" />
-            <Text style={styles.processingText}>{processingStep}</Text>
-            <Text style={styles.processingSubtext}>Vui lòng chờ trong giây lát...</Text>
-          </View>
-        )}
-
-        {/* Analysis Results */}
-        {renderAnalysisResults()}
-
-        {/* Auto Enhance Button */}
-        {selectedImage && !isProcessing && (
-          <View style={styles.enhanceButtonContainer}>
-            <TouchableOpacity 
-              style={styles.autoEnhanceButton} 
-              onPress={handleAutoEnhance}
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.7}
             >
-              <Text style={styles.autoEnhanceButtonText}>🎯 Tự động tăng cường</Text>
+              <Text style={styles.backButtonText}>← Quay lại</Text>
             </TouchableOpacity>
-          </View>
-        )}
 
-        {/* Manual Controls */}
-        {selectedImage && (
-          <View style={styles.manualControlsContainer}>
-            <Text style={styles.sectionTitle}>🎛️ Điều chỉnh thủ công</Text>
-            
-            <View style={styles.sliderContainer}>
-              <Text style={styles.sliderLabel}>💡 Độ sáng: {brightness.toFixed(2)}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={-0.5}
-                maximumValue={0.5}
-                value={brightness}
-                onValueChange={setBrightness}
-                minimumTrackTintColor="#007bff"
-                maximumTrackTintColor="#ccc"
-                thumbStyle={styles.sliderThumb}
-              />
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>🤖 AI Caption Generator</Text>
+              <Text style={styles.headerSubtitle}>
+                Tạo caption theo yêu cầu với Gemini AI
+              </Text>
             </View>
 
-            <View style={styles.sliderContainer}>
-              <Text style={styles.sliderLabel}>🔆 Độ tương phản: {contrast.toFixed(2)}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={-0.3}
-                maximumValue={0.3}
-                value={contrast}
-                onValueChange={setContrast}
-                minimumTrackTintColor="#007bff"
-                maximumTrackTintColor="#ccc"
-                thumbStyle={styles.sliderThumb}
-              />
-            </View>
-
-            <View style={styles.sliderContainer}>
-              <Text style={styles.sliderLabel}>🎨 Độ bão hòa: {saturation.toFixed(2)}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={-0.2}
-                maximumValue={0.2}
-                value={saturation}
-                onValueChange={setSaturation}
-                minimumTrackTintColor="#007bff"
-                maximumTrackTintColor="#ccc"
-                thumbStyle={styles.sliderThumb}
-              />
-            </View>
-
-            <View style={styles.sliderContainer}>
-              <Text style={styles.sliderLabel}>✨ Độ sắc nét: {sharpen.toFixed(2)}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={1}
-                value={sharpen}
-                onValueChange={setSharpen}
-                minimumTrackTintColor="#007bff"
-                maximumTrackTintColor="#ccc"
-                thumbStyle={styles.sliderThumb}
-              />
-            </View>
-
-            <View style={styles.toggleContainer}>
-              <TouchableOpacity 
-                style={[styles.toggleButton, smartCrop && styles.toggleButtonActive]}
-                onPress={() => setSmartCrop(!smartCrop)}
+            {(userPrompt || generatedCaption) && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={clearAll}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.toggleButtonText, smartCrop && styles.toggleButtonTextActive]}>
-                  {smartCrop ? '✅' : '⬜'} Cắt thông minh
-                </Text>
+                <Text style={styles.clearButtonText}>Xóa</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.toggleButton, skinSmoothing && styles.toggleButtonActive]}
-                onPress={() => setSkinSmoothing(!skinSmoothing)}
-              >
-                <Text style={[styles.toggleButtonText, skinSmoothing && styles.toggleButtonTextActive]}>
-                  {skinSmoothing ? '✅' : '⬜'} Làm mịn da
+            )}
+          </View>
+
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Main Input Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>💬 Nhập yêu cầu của bạn</Text>
+              <TextInput
+                style={styles.promptInput}
+                placeholder="Ví dụ: Tạo caption lãng mạn về tình yêu, thêm emoji trái tim..."
+                value={userPrompt}
+                onChangeText={setUserPrompt}
+                multiline
+                textAlignVertical="top"
+                placeholderTextColor="#999"
+                maxLength={500}
+              />
+
+              <View style={styles.inputFooter}>
+                <Text style={styles.characterCount}>
+                  {userPrompt.length}/500
                 </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.generateButton,
+                  (!userPrompt.trim() || isGenerating) &&
+                    styles.generateButtonDisabled,
+                ]}
+                onPress={handleGenerateCaption}
+                disabled={!userPrompt.trim() || isGenerating}
+                activeOpacity={0.8}
+              >
+                {isGenerating ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text style={styles.loadingText}>Đang tạo caption...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.generateButtonText}>
+                    ✨ Tạo Caption với AI
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
 
-            <View style={styles.manualButtonsContainer}>
-              <TouchableOpacity 
-                style={styles.applyButton} 
-                onPress={handleManualEnhance}
-                disabled={isProcessing}
-              >
-                <Text style={styles.applyButtonText}>
-                  {isProcessing ? '⏳ Đang xử lý...' : '✅ Áp dụng'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.resetButton} onPress={resetSettings}>
-                <Text style={styles.resetButtonText}>🔄 Đặt lại</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+            {/* Generated Caption */}
+            {generatedCaption && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>📝 Caption được tạo</Text>
+                <View style={styles.captionContainer}>
+                  <ScrollView
+                    style={styles.captionScrollView}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <Text style={styles.captionText}>{generatedCaption}</Text>
+                  </ScrollView>
 
-        {/* Save Button */}
-        {enhancedImage && !isProcessing && (
-          <View style={styles.saveButtonContainer}>
-            <TouchableOpacity style={styles.saveButton} onPress={saveEnhancedImage}>
-              <Text style={styles.saveButtonText}>💾 Lưu ảnh tăng cường</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
-    </View>
+                  <View style={styles.captionActions}>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => copyToClipboard(generatedCaption)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.actionButtonText}>📋 Copy</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={shareCaption}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.actionButtonText}>📤 Share</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Quick Examples */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>💡 Ví dụ yêu cầu</Text>
+              <View style={styles.exampleContainer}>
+                {examplePrompts.map((example, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.exampleButton}
+                    onPress={() => selectExamplePrompt(example.prompt)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.exampleIcon}>{example.icon}</Text>
+                    <Text style={styles.exampleText}>{example.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  darkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+  },
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-    paddingTop: Platform.OS === 'ios' ? 50 : 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderBottomColor: "#e9ecef",
+    minHeight: 80,
   },
   backButton: {
-    padding: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   backButtonText: {
-    color: '#007aff',
-    fontSize: 24,
-    fontWeight: 'bold',
+    color: "#007bff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  headerContent: {
+    flex: 1,
+    marginLeft: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#212529",
+    marginBottom: 2,
   },
-  scrollContainer: {
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#6c757d",
+  },
+  clearButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#dc3545",
+    borderRadius: 6,
+  },
+  clearButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  scrollView: {
     flex: 1,
   },
-  welcomeContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  section: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    margin: 16,
     padding: 20,
-    borderRadius: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-  },
-  welcomeTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+    shadowRadius: 8,
   },
   sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#212529",
+    marginBottom: 16,
+  },
+  promptInput: {
+    borderWidth: 2,
+    borderColor: "#dee2e6",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  imageSelectionContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 15,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  imageButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  imageButton: {
-    flex: 1,
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  imageButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  imagePreviewContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 15,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  imageComparisonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  imageColumn: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  imageLabel: {
-    fontSize: 12,
-    color: '#666',
+    backgroundColor: "#fff",
+    minHeight: 120,
     marginBottom: 8,
-    fontWeight: '500',
+    fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
   },
-  previewImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+  inputFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginBottom: 16,
   },
-  processingContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 25,
-    borderRadius: 12,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  processingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: '#007bff',
-    fontWeight: '600',
-  },
-  processingSubtext: {
-    marginTop: 5,
+  characterCount: {
     fontSize: 12,
-    color: '#666',
+    color: "#6c757d",
   },
-  analysisContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 15,
+  generateButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 16,
     borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  analysisTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  analysisGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  analysisItem: {
-    width: '48%',
-    marginBottom: 10,
-    backgroundColor: '#f8f9fa',
-    padding: 10,
-    borderRadius: 8,
-  },
-  analysisLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  analysisValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  enhanceButtonContainer: {
-    margin: 15,
-    alignItems: 'center',
-  },
-  autoEnhanceButton: {
-    backgroundColor: '#28a745',
-    paddingHorizontal: 40,
-    paddingVertical: 18,
-    borderRadius: 30,
+    alignItems: "center",
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  autoEnhanceButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  generateButtonDisabled: {
+    backgroundColor: "#6c757d",
+    opacity: 0.7,
+    elevation: 1,
   },
-  manualControlsContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 15,
+  generateButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  loadingText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  captionContainer: {
+    backgroundColor: "#f8f9fa",
     borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
+    borderLeftWidth: 4,
+    borderLeftColor: "#007bff",
+    overflow: "hidden",
+  },
+  captionScrollView: {
+    maxHeight: 200,
+    padding: 16,
+  },
+  captionText: {
+    fontSize: 16,
+    color: "#212529",
+    lineHeight: 24,
+    fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
+  },
+  captionActions: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#dee2e6",
+  },
+  actionButton: {
+    flex: 1,
+    backgroundColor: "#007bff",
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRightWidth: 1,
+    borderRightColor: "#0056b3",
+  },
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  exampleContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  exampleButton: {
+    backgroundColor: "#e9ecef",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 1,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
   },
-  sliderContainer: {
-    marginBottom: 20,
+  exampleIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
-  sliderLabel: {
+  exampleText: {
     fontSize: 14,
-    color: '#333',
-    marginBottom: 10,
-    fontWeight: '500',
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  sliderThumb: {
-    backgroundColor: '#007bff',
-    width: 20,
-    height: 20,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  toggleButton: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-  },
-  toggleButtonActive: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
-  },
-  toggleButtonText: {
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#333',
+    color: "#495057",
+    fontWeight: "600",
   },
 });
