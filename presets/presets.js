@@ -176,10 +176,10 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 }
+      { x: 28, y: 92, width: 323, height: 430 },
+      { x: 28, y: 92, width: 323, height: 430 },
+      { x: 28, y: 92, width: 323, height: 430 },
+      { x: 28, y: 92, width: 323, height: 430 }
     ],
   },
   {
@@ -189,9 +189,9 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 38, y: 37, width: 652, height: 421 },
+      { x: 38, y: 37, width: 652, height: 421 },
+      { x: 38, y: 37, width: 652, height: 421 }
     ],
   },
   {
@@ -201,9 +201,9 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 38, y: 37, width: 652, height: 421 },
+      { x: 38, y: 37, width: 652, height: 421 },
+      { x: 38, y: 37, width: 652, height: 421 }
     ],
   },
   {
@@ -213,14 +213,14 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 },
+      { x: 387, y: 31, width: 329, height: 238 }
     ],
   },
   {
@@ -230,12 +230,12 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 154, y: 232, width: 193, height: 173 },
+      { x: 154, y: 232, width: 193, height: 173 },
+      { x: 154, y: 232, width: 193, height: 173 },
+      { x: 154, y: 232, width: 193, height: 173 },
+      { x: 154, y: 232, width: 193, height: 173 },
+      { x: 154, y: 232, width: 193, height: 173 }
     ],
   },
   {
@@ -245,14 +245,14 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 },
+      { x: 33, y: 206, width: 302, height: 195 }
     ],
   },
   {
@@ -262,8 +262,8 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 34, y: 35, width: 672, height: 551 },
+      { x: 30, y: 601, width: 680, height: 549 }
     ],
   },
   {
@@ -273,10 +273,10 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 244, y: 43, width: 274, height: 190 },
+      { x: 244, y: 43, width: 274, height: 190 },
+      { x: 244, y: 43, width: 274, height: 190 },
+      { x: 244, y: 43, width: 274, height: 190 }
     ],
   },
   {
@@ -286,10 +286,10 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 20, y: 143, width: 330, height: 503 },
+      { x: 20, y: 143, width: 330, height: 503 },
+      { x: 20, y: 143, width: 330, height: 503 },
+      { x: 20, y: 143, width: 330, height: 503 }
     ],
   },
   {
@@ -299,10 +299,10 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 36, y: 49, width: 309, height: 451 },
+      { x: 36, y: 49, width: 309, height: 451 },
+      { x: 36, y: 49, width: 309, height: 451 },
+      { x: 36, y: 49, width: 309, height: 451 }
     ],
   },
   {
@@ -312,57 +312,10 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 27,
-    label: "Khung cơ bản đen",
-    image: require("../assets/27.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 28,
-    label: "Khung cơ bản đen",
-    image: require("../assets/27.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 29,
-    label: "Khung dễ thương",
-    image: require("../assets/27.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 40, y: 43, width: 328, height: 431 },
+      { x: 40, y: 43, width: 328, height: 431 },
+      { x: 40, y: 43, width: 328, height: 431 },
+      { x: 40, y: 43, width: 328, height: 431 }
     ],
   },
   {
@@ -372,26 +325,14 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 31,
-    label: "Khung cơ bản đen",
-    image: require("../assets/31.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 }
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 },
+      { x: 28, y: 61, width: 358, height: 261 }
     ],
   },
   {
@@ -401,44 +342,14 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 33,
-    label: "Khung dễ thương",
-    image: require("../assets/33.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 34,
-    label: "Khung dễ thương",
-    image: require("../assets/34.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 },
+      { x: 42, y: 119, width: 450, height: 322 }
     ],
   },
   {
@@ -448,26 +359,14 @@ export const presets = [
     originalWidth: 400,
     originalHeight: 600,
     slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 }
-    ],
-  },
-  {
-    id: 36,
-    label: "Khung dễ thương",
-    image: require("../assets/36.png"),
-    originalWidth: 400,
-    originalHeight: 600,
-    slots: [
-      { x: 30, y: 40, width: 120, height: 160 },
-      { x: 180, y: 40, width: 120, height: 160 },
-      { x: 30, y: 40, width: 120, height: 160 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 },
+      { x: 36, y: 26, width: 331, height: 223 }
     ],
   },
 ];
