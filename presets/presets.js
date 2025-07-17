@@ -83,7 +83,7 @@ export const presets = [
   {
     id: 7,
     label: "Khung hiện đại",
-    image: require("../assets/8.png"),
+    image: require("../assets/7.png"),
     originalWidth: 736,
     originalHeight: 736,
     slots: [
